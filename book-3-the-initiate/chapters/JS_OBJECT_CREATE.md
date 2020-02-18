@@ -6,12 +6,6 @@
 * Properties describe the objects
 * Methods define their behavior
 
-## Actor
-
-What do I mean by actor? To understand that, let's look at the definition of one of the core principles that professional software developers use to build flexible, scalable, maintainable systems - the Single Responsiblity Principle [SRP]. It's part of the collection of  SOLID principles.
-
-You need to read the [SOLID: Part 1](https://code.tutsplus.com/tutorials/solid-part-1-the-single-responsibility-principle--net-36074) article which covers the SRP and the term *Actor*.
-
 ## Using the Power of Object.create()
 
 Up to this point, we've been using the simplistic method for creating objects, which gives us no power, or control, on how it gets manipulated.
@@ -20,31 +14,30 @@ Up to this point, we've been using the simplistic method for creating objects, w
 const boringObject = {}
 ```
 
-Now you're going to learn about `Object.create()`, and once you see how much power it gives you, you will start to understand how it can help you comply with the SRP.
+In this chapter you're going to learn about `Object.create()`, which gives a JavaScript developer far more control over how external code can interact with it.
 
-![realize the power](images/object-create-realize.gif)
-
-> *The moment when a JavaScript developer realizes the true power of Object.create()*
-
-### Read Only Properties
+## Read Only Properties
 
 When you use `{}` to create an object, you have zero control how properties are created, deleted, or changed. Here's an object with very sensitive data in it.
 
 ```js
 const veryImportantInfo = {
     "socialSecurity": "934-11-0201",
-    "bankAccountNumber": "4483271255",
-    "bankRoutingNumber": "458979043"
+    "accountNumber": "4483271255",
+    "routingNumber": "458979043"
 }
 ```
 
 Another developer on your team is tasked with using that object in her code, so she writes a function for that purpose.
 
 ```js
-const requestFunds = function (customerInfo) {
-    // Note: Banks require that the account number and routing number be combined into a single value
-    customerInfo.bankAccountNumber = customerInfo.bankAccountNumber + customerInfo.bankRoutingNumber
-    const transactionInfo = customerInfo.bankAccountNumber
+const requestFunds = function (info) {
+    /*
+       Note: Banks require that the account number and
+       routing number be combined into a single value
+    */
+    info.accountNumber = info.accountNumber + info.routingNumber
+    const transactionInfo = info.accountNumber
 
     // Awesome code that performs the transaction goes here...
 }
@@ -53,30 +46,33 @@ const requestFunds = function (customerInfo) {
 The requirements she got for her feature required that the account number and the routing number be combined into a single string for the transaction to be successful. So while her code works perfectly fine, she inadvertantly modified YOUR OBJECT! It wasn't malicious, just a standard bug introduced when a developer isn't focused.
 
 ```js
-const requestFunds = function (customerInfo) {
-    // Note: Banks require that the account number and routing number be combined into a single value
-    customerInfo.bankAccountNumber = customerInfo.bankAccountNumber + customerInfo.bankRoutingNumber
-    const transactionInfo = customerInfo.bankAccountNumber
+const requestFunds = function (info) {
+    /*
+       Note: Banks require that the account number and
+       routing number be combined into a single value
+    */
+    info.accountNumber = info.accountNumber + info.routingNumber
+    const transactionInfo = info.accountNumber
 
     // Awesome code that performs the transaction goes here...
 }
 
 const veryImportantInfo = {
     "socialSecurity": "934-11-0201",
-    "bankAccountNumber": "4483271255",
-    "bankRoutingNumber": "458979043"
+    "accountNumber": "4483271255",
+    "routingNumber": "458979043"
 }
 
 requestFunds(veryImportantInfo)
 
-console.log(veryImportantInfo.bankAccountNumber)   // 4483271255458979043 --> Yikes!
+console.log(veryImportantInfo.accountNumber)   // 4483271255458979043 --> Yikes!
 ```
 
 ![panic!](./images/panic.gif)
 
 ## Read-only Properties
 
-Using the power of `Object.create()` you can prevent another developer from changing the value of any property on an object. The create method allows you to specify whether a property can be changed with the `writable` property. By setting it to false, that value cannot be changed. It is now a read-only property.
+Using the power of `Object.create()` you can prevent another developer from changing the value of any property on an object. You can specify whether a property can be changed with the `writable` property. By setting it to `false`, that value cannot be changed. It is now a read-only property.
 
 ```js
 const veryImportantInfo = Object.create(null, {
@@ -84,11 +80,11 @@ const veryImportantInfo = Object.create(null, {
         value: "934-11-0201",
         writable: false
     },
-    bankAccountNumber: {
+    accountNumber: {
         value: "4483271255",
         writable: false
     },
-    bankRoutingNumber: {
+    routingNumber: {
         value: "458979043",
         writable: false
     }
@@ -105,10 +101,10 @@ const veryImportantInfo = Object.create(null, {
     socialSecurity: {
         value: "934-11-0201"
     },
-    bankAccountNumber: {
+    accountNumber: {
         value: "4483271255"
     },
-    bankRoutingNumber: {
+    routingNumber: {
         value: "458979043"
     }
 })
@@ -330,7 +326,41 @@ Here's the output when we use `Object.create()` to make those methods non-enumer
 
 You can view the working code in [JSFiddle](https://jsfiddle.net/chortlehoort/csf4qodj/).
 
-## Practice
+
+## Practice: The toString Version of You
+
+Create an object that represents you. It should have the following properties on it.
+
+1. First name
+1. Last name
+1. Date of birth
+1. Place of birth
+1. Current city of residence
+1. Current state of residence
+
+Only the city and the state of residence should be able to be modified by other code in the application. The other properties should be read only (i.e. non-writable).
+
+Once those are defined, create a method on your object named `toString()`.
+
+```js
+const Me = Object.create(null, {
+    toString: {
+        value: function () {
+            // Your code goes here
+        }
+    }
+})
+```
+
+When you invoke the `toString()` method, the following string should be generated.
+
+```text
+Ollie Osinusi was born in Sacramento, CA. He was born on 10/13/1990. He currently lives in Murfreesboro, TN.
+```
+
+## Practice: Financial Advisor
+
+> The learning objective for this practice exercise is to use different combinations of object property configurations to understand how you can have control over what data can, and cannot, be changed by other code in an application.
 
 Your job is to create an object that represents a financial advisor and has the following properties and methods.
 
@@ -342,28 +372,82 @@ Your job is to create an object that represents a financial advisor and has the 
 1. Purchase (non-enumerable, method) - This method takes a stock ticker symbol, a quantity, and a price as arguments
 1. Sell (non-enumerable, method) - This method takes a stock ticker symbol, a quantity, and a price as arguments
 
-When `sell()` or `purchase()` are invoked, then the stock portfolio should be modified accordingly. Start off with making `portfolio` property an array that holds transactions.
+When `sell()` or `purchase()` are invoked, then the stock portfolio should be modified accordingly. Start off with making `portfolio` property an array that holds transactions. Each transaction should be an object.
 
-When you invoke the `worth()` method, it should look at every transaction and calculate the advisor's net worth.
+```js
+// Example transaction
+{
+    stock: "TWTR",
+    quantity: 100,
+    price: 34.59,
+    buyTransaction: true
+}
+```
 
-## Challenge
+When you invoke the `worth()` method, it should look at every transaction and calculate the advisor's net worth. Each buy transaction should add to the net worth. Each sell transaction should subtract from the net worth.
+
+---
+
+> Challenges are optional exercises that you should only attempt if you have completed the practice exercises, and fully understand the concepts used in them.
+
+## Challenge: Fragments and Elements
+
+> The learning objective for this challenge is to use modern JavaScript methods to create DOM elements.
 
 1. Use `document.createElement` to build & display an HTML component to display the advisor's name, company, and specialty.
 1. Iterate over the advisor's portfolio and use `document.createDocumentFragment` along with `document.createElement` to display some HTML components representing each stock owned by the advisor.
 
-## Advanced Challenge
+## Challenge: Advisor.toString()
 
-Change the `portfolio` property value from an array to an object. Instead of it being a record of transactions, it should only store the advisor's current assets. Each invocation of `sell` or `purchase` should modify the advisor's holdings.
+> The learning objective of this challenge is to pratice using string templates and interpolation.
+
+Add a `toString()` method to your financial advisor object that outputs the following message format.
+
+`​​​​​Fernando Valenzuela is an advisor at Gold Heart Investments. Current portfolio value is US$ 13,647.00​​​​​`
+
+## Advanced Challenge: Calculated Properties
+
+> The learning objective for this challenge is to write a getter and a setter for the `worth` property of the financial advisor. This lets you explore the concept of calculated properties.
+
+Up to this point, you have used methods (i.e. functions on objects) to perform logic and calculations needed for the object. Properties are simple, primitive values like "John", 100, and `true`. With the power of `Object.create()`, you can still have properties, but their value is calculated via a function rather than being simple assignment and retrieval.
+
+Consider the `worth()` method on your object. Worth itself is not a behavior, or a process, of the financial advisor, but you had to write it as a method because you needed to iterate the portfolio and return the calculated value. You can use [get()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/get) and [set()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/set) with `Object.create()` to change `worth` into a property instead.
 
 ```js
-{
-    "AAPL": {
-        "shares": 152,
-        "valuation": 30400
-    },
-    "MSFT": {
-        "shares": 290,
-        "valuation": 49300
-    }
+// You need to define the values of the getter and setter
+worth: {
+    get: ...,
+    set: ...
 }
 ```
+
+Once those are defined correctly, this code should output the worth of the portfolio.
+
+```js
+// Note the lack of parenthesis after worth. It's a property.
+console.log(FinancialAdvisor.worth)
+```
+
+## Black Hat Advanced Challenge: Hiring More Advisors
+
+> The learning objective of this black hat advanced challenge is to use prototypal inheritance with `Object.create()` to start understanding how, when you have many objects that share common properties and behaviors, inheritance reduces duplicating code.
+
+Use the power of prototypal inheritance and `Object.create()` to hire three more financial advisors. All properties and behaviors that are **common to all advisors** should be on the more general prototype for the individual advisors.
+
+1. All advisors will work for the same company
+1. Each advisor maintains their own portfolio
+1. Worth of each advisor's portfolios will be calculated with the same process
+1. Each advisor specializes in a different sector
+
+Two lines of code to get you started, hacker...
+
+```js
+const JuliaKimChung = Object.create(FinancialAdvisor, {
+    ...
+})
+
+const IkeNwaelele = Object.create(FinancialAdvisor, {
+    ...
+})
+```
+
